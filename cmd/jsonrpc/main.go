@@ -1,15 +1,16 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"runtime"
 
 	"github.com/ethereum/go-ethereum/cmd/utils"
-	"github.com/ethereum/go-ethereum/eth"
-	"github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/node"
+	"github.com/jsvisa/jsonrpc/backend"
+	"github.com/jsvisa/jsonrpc/node"
+	"github.com/jsvisa/jsonrpc/service/trace"
 
 	"github.com/urfave/cli/v2"
 )
@@ -20,6 +21,16 @@ const (
 
 var app = cli.NewApp()
 var (
+	upstreamJSONRPCAddrFlag = &cli.StringFlag{
+		Name:  "upstream.jsonrpc.addr",
+		Usage: "upstream JSONRPC HTTP address with port",
+		Value: "http://127.0.0.1:8545",
+	}
+	upstreamDBDSNAddrFlag = &cli.StringFlag{
+		Name:  "upstream.dbdsn.addr",
+		Usage: "upstream DB DSN",
+		Value: "host=localhost user=postgres password= dbname=tsdb port=5432 sslmode=disable TimeZone=Asia/Shanghai",
+	}
 	pprofFlag = &cli.BoolFlag{
 		Name:  "pprof",
 		Usage: "Enable the pprof HTTP server",
@@ -70,6 +81,7 @@ func init() {
 		utils.WSApiFlag,
 		utils.WSAllowedOriginsFlag,
 		utils.WSPathPrefixFlag,
+		upstreamJSONRPCAddrFlag,
 		pprofFlag,
 		pprofAddrFlag,
 		pprofPortFlag,
@@ -100,11 +112,16 @@ func run(ctx *cli.Context) error {
 		log.Crit("Failed to create the protocol stack: %v", err)
 	}
 
-	backend, err := eth.New(stack, &cfg.Eth)
+	cctx := context.Background()
+	backend, err := backend.NewMixinBackend(
+		cctx,
+		ctx.String(upstreamJSONRPCAddrFlag.Name),
+		ctx.String(upstreamDBDSNAddrFlag.Name),
+	)
 	if err != nil {
 		log.Crit("Failed to register the Ethereum service: %v", err)
 	}
-	stack.RegisterAPIs(tracers.APIs(backend.APIBackend))
+	stack.RegisterAPIs(trace.APIs(backend))
 	defer stack.Close()
 
 	if err := stack.Start(); err != nil {

@@ -5,7 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/cmd/utils"
 	"github.com/ethereum/go-ethereum/eth/ethconfig"
-	"github.com/ethereum/go-ethereum/node"
+	"github.com/jsvisa/jsonrpc/node"
 )
 
 type gethConfig struct {
@@ -32,6 +32,35 @@ func loadBaseConfig(ctx *cli.Context) gethConfig {
 	}
 
 	// Apply flags.
-	utils.SetNodeConfig(ctx, &cfg.Node)
+	setHTTP(ctx, &cfg.Node)
 	return cfg
+}
+
+func setHTTP(ctx *cli.Context, cfg *node.Config) {
+	if ctx.Bool(utils.HTTPEnabledFlag.Name) && cfg.HTTPHost == "" {
+		cfg.HTTPHost = "127.0.0.1"
+		if ctx.IsSet(utils.HTTPListenAddrFlag.Name) {
+			cfg.HTTPHost = ctx.String(utils.HTTPListenAddrFlag.Name)
+		}
+	}
+
+	if ctx.IsSet(utils.HTTPPortFlag.Name) {
+		cfg.HTTPPort = ctx.Int(utils.HTTPPortFlag.Name)
+	}
+
+	if ctx.IsSet(utils.HTTPCORSDomainFlag.Name) {
+		cfg.HTTPCors = utils.SplitAndTrim(ctx.String(utils.HTTPCORSDomainFlag.Name))
+	}
+
+	if ctx.IsSet(utils.HTTPApiFlag.Name) {
+		cfg.HTTPModules = utils.SplitAndTrim(ctx.String(utils.HTTPApiFlag.Name))
+	}
+
+	if ctx.IsSet(utils.HTTPVirtualHostsFlag.Name) {
+		cfg.HTTPVirtualHosts = utils.SplitAndTrim(ctx.String(utils.HTTPVirtualHostsFlag.Name))
+	}
+
+	if ctx.IsSet(utils.HTTPPathPrefixFlag.Name) {
+		cfg.HTTPPathPrefix = ctx.String(utils.HTTPPathPrefixFlag.Name)
+	}
 }
