@@ -26,7 +26,7 @@ type mixinBackend struct {
 	chain string
 	ec    *ethclient.Client
 	db    *gorm.DB
-	bc    *lru.Cache[int64, uint64]
+	bc    *lru.Cache[int64, *types.Header]
 }
 
 const (
@@ -62,16 +62,21 @@ func NewMixinBackend(ctx context.Context, chain string, rawurl string, dbdsn str
 		chain: chain,
 		ec:    ec,
 		db:    db,
-		bc:    lru.NewCache[int64, uint64](blockCacheLimit),
+		bc:    lru.NewCache[int64, *types.Header](blockCacheLimit),
 	}
 	return b, nil
 }
 
 func (b *mixinBackend) HeaderByNumber(ctx context.Context, number rpc.BlockNumber) (*types.Header, error) {
-	block, err := b.ec.BlockByNumber(ctx, big.NewInt(number.Int64()))
+	blknum := big.NewInt(number.Int64())
+	if cached, ok := b.bc.Get(number.Int64()); ok {
+		return cached, nil
+	}
+	block, err := b.ec.BlockByNumber(ctx, blknum)
 	if err != nil {
 		return nil, err
 	}
+	b.bc.Add(number.Int64(), block.Header())
 	return block.Header(), nil
 }
 
@@ -80,16 +85,11 @@ func (b *mixinBackend) BlockByNumber(ctx context.Context, number rpc.BlockNumber
 }
 
 func (b *mixinBackend) BlockTimestamp(ctx context.Context, number rpc.BlockNumber) (uint64, error) {
-	blknum := big.NewInt(number.Int64())
-	if cached, ok := b.bc.Get(number.Int64()); ok {
-		return cached, nil
-	}
-	block, err := b.ec.BlockByNumber(ctx, blknum)
+	header, err := b.HeaderByNumber(ctx, number)
 	if err != nil {
 		return 0, err
 	}
-	b.bc.Add(number.Int64(), block.Time())
-	return block.Time(), nil
+	return header.Time, nil
 }
 
 type rpcTransaction struct {
@@ -132,25 +132,34 @@ func (b *mixinBackend) TransactionByHash(ctx context.Context, txHash common.Hash
 }
 
 func (b *mixinBackend) TraceBlock(ctx context.Context, number rpc.BlockNumber) ([]*CallFrame, error) {
-	blockTime, err := b.BlockTimestamp(ctx, number)
+	header, err := b.HeaderByNumber(ctx, number)
 	if err != nil {
 		return nil, err
 	}
-	return b.trace(ctx, b.db.Where("block_timestamp = ?", time.Unix(int64(blockTime), 0)).Where("blknum = ?", number.Int64()))
+	return b.trace(ctx, header, nil)
 }
 
 func (b *mixinBackend) TraceTransaction(ctx context.Context, txHash common.Hash) ([]*CallFrame, error) {
-	_, number, blockTime, err := b.TransactionByHash(ctx, txHash)
+	_, number, _, err := b.TransactionByHash(ctx, txHash)
 	if err != nil {
 		return nil, err
 	}
-	return b.trace(ctx, b.db.Where("block_timestamp = ?", time.Unix(int64(blockTime), 0)).Where("blknum = ?", number).Where("txhash = ?", txHash.Hex()))
+	header, err := b.HeaderByNumber(ctx, rpc.BlockNumber(number))
+	if err != nil {
+		return nil, err
+	}
+	return b.trace(ctx, header, &txHash)
 }
 
-func (b *mixinBackend) trace(ctx context.Context, sql *gorm.DB) ([]*CallFrame, error) {
+func (b *mixinBackend) trace(ctx context.Context, header *types.Header, txHash *common.Hash) ([]*CallFrame, error) {
 	var traces []Trace
+	sql := b.db.Table(fmt.Sprintf("%s.%s", b.chain, "traces")).
+		Where("block_timestamp = ?", time.Unix(int64(header.Time), 0)).
+		Where("blknum = ?", header.Number)
+	if txHash != nil {
+		sql = sql.Where("txhash = ?", txHash.Hex())
+	}
 	err := sql.
-		Table(fmt.Sprintf("%s.%s", b.chain, "traces")).
 		Find(&traces).
 		Order("txpos ASC, trace_address ASC").
 		Error
@@ -158,9 +167,12 @@ func (b *mixinBackend) trace(ctx context.Context, sql *gorm.DB) ([]*CallFrame, e
 		return nil, err
 	}
 
+	blockHash := header.Hash()
 	callFrames := make([]*CallFrame, len(traces))
 	for i, trace := range traces {
-		callFrames[i] = trace.AsCallFrame()
+		cf := trace.AsCallFrame()
+		cf.BlockHash = &blockHash
+		callFrames[i] = cf
 	}
 	return callFrames, nil
 }
