@@ -21,15 +21,20 @@ const (
 
 var app = cli.NewApp()
 var (
-	upstreamJSONRPCAddrFlag = &cli.StringFlag{
-		Name:  "upstream.jsonrpc.addr",
+	chainFlag = &cli.StringFlag{
+		Name:  "chain",
+		Usage: "chain name",
+		Value: "ethereum",
+	}
+	upstreamJSONRPCFlag = &cli.StringFlag{
+		Name:  "upstream.jsonrpc",
 		Usage: "upstream JSONRPC HTTP address with port",
 		Value: "http://127.0.0.1:8545",
 	}
-	upstreamDBDSNAddrFlag = &cli.StringFlag{
-		Name:  "upstream.dbdsn.addr",
-		Usage: "upstream DB DSN",
-		Value: "host=localhost user=postgres password= dbname=tsdb port=5432 sslmode=disable TimeZone=Asia/Shanghai",
+	upstreamDBDSNFlag = &cli.StringFlag{
+		Name:  "upstream.dbdsn",
+		Usage: "upstream PostgreSQL connection DSN",
+		Value: "postgres://postgres:@127.0.0.1:5432/postgres?sslmode=disable",
 	}
 	pprofFlag = &cli.BoolFlag{
 		Name:  "pprof",
@@ -61,17 +66,13 @@ var (
 )
 
 func init() {
-	// Initialize the CLI app and start Geth
+	// Initialize the CLI app and start web server
 	app.Action = run
 	app.Flags = []cli.Flag{
 		utils.HTTPEnabledFlag,
 		utils.HTTPListenAddrFlag,
 		utils.HTTPPortFlag,
 		utils.HTTPCORSDomainFlag,
-		utils.AuthListenFlag,
-		utils.AuthPortFlag,
-		utils.AuthVirtualHostsFlag,
-		utils.JWTSecretFlag,
 		utils.HTTPVirtualHostsFlag,
 		utils.HTTPApiFlag,
 		utils.HTTPPathPrefixFlag,
@@ -81,7 +82,9 @@ func init() {
 		utils.WSApiFlag,
 		utils.WSAllowedOriginsFlag,
 		utils.WSPathPrefixFlag,
-		upstreamJSONRPCAddrFlag,
+		chainFlag,
+		upstreamJSONRPCFlag,
+		upstreamDBDSNFlag,
 		pprofFlag,
 		pprofAddrFlag,
 		pprofPortFlag,
@@ -115,8 +118,9 @@ func run(ctx *cli.Context) error {
 	cctx := context.Background()
 	backend, err := backend.NewMixinBackend(
 		cctx,
-		ctx.String(upstreamJSONRPCAddrFlag.Name),
-		ctx.String(upstreamDBDSNAddrFlag.Name),
+		ctx.String(chainFlag.Name),
+		ctx.String(upstreamJSONRPCFlag.Name),
+		ctx.String(upstreamDBDSNFlag.Name),
 	)
 	if err != nil {
 		log.Crit("Failed to register the Ethereum service: %v", err)
