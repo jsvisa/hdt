@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/ethereum/go-ethereum v1.11.6
 	github.com/rs/cors v1.7.0
+	github.com/shopspring/decimal v1.3.1
 	github.com/urfave/cli/v2 v2.25.3
 	gorm.io/driver/postgres v1.5.0
 	gorm.io/gorm v1.25.1
