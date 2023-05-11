@@ -23,8 +23,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	ethtracers "github.com/ethereum/go-ethereum/eth/tracers"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -79,74 +77,16 @@ func (api *API) blockByNumber(ctx context.Context, number rpc.BlockNumber) (*typ
 	return block, nil
 }
 
-// txTraceResult is the result of a single transaction trace.
-type txTraceResult struct {
-	TxHash common.Hash `json:"txHash"`           // transaction hash
-	Result interface{} `json:"result,omitempty"` // Trace results produced by the tracer
-	Error  string      `json:"error,omitempty"`  // Trace failure produced by the tracer
-}
-
-// blockTraceTask represents a single block trace task when an entire chain is
-// being traced.
-type blockTraceTask struct {
-	statedb *state.StateDB   // Intermediate state prepped for tracing
-	block   *types.Block     // Block to trace the transactions from
-	results []*txTraceResult // Trace results produced by the task
-}
-
-// blockTraceResult represents the results of tracing a single block when an entire
-// chain is being traced.
-type blockTraceResult struct {
-	Block  hexutil.Uint64   `json:"block"`  // Block number corresponding to this trace
-	Hash   common.Hash      `json:"hash"`   // Block hash corresponding to this trace
-	Traces []*txTraceResult `json:"traces"` // Trace results produced by the task
-}
-
-// txTraceTask represents a single transaction trace task when an entire block
-// is being traced.
-type txTraceTask struct {
-	statedb *state.StateDB // Intermediate state prepped for tracing
-	index   int            // Transaction offset in the block
-}
-
 // TraceBlockByNumber returns the structured logs created during the execution of
 // EVM and returns them as a JSON object.
-func (api *API) TraceBlock(ctx context.Context, number rpc.BlockNumber, config *ethtracers.TraceConfig) ([]*txTraceResult, error) {
-	block, err := api.blockByNumber(ctx, number)
-	if err != nil {
-		return nil, err
-	}
-	return api.traceBlock(ctx, block, config)
+func (api *API) Block(ctx context.Context, number rpc.BlockNumber, config *ethtracers.TraceConfig) ([]*backend.CallFrame, error) {
+	return api.backend.TraceBlock(ctx, number)
 }
 
-// traceBlock configures a new tracer according to the provided configuration, and
-// executes all the transactions contained within. The return value will be one item
-// per transaction, dependent on the requested tracer.
-func (api *API) traceBlock(ctx context.Context, block *types.Block, config *ethtracers.TraceConfig) ([]*txTraceResult, error) {
-	if block.NumberU64() == 0 {
-		return nil, errors.New("genesis is not traceable")
-	}
-
-	// TODO: retrive results from PostgreSQL or upstream
-	return nil, nil
-}
-
-// TraceTransaction returns the structured logs created during the execution of EVM
+// Transaction returns the structured logs created during the execution of EVM
 // and returns them as a JSON object.
-func (api *API) TraceTransaction(ctx context.Context, hash common.Hash, config *ethtracers.TraceConfig) (interface{}, error) {
-	tx, _, blockNumber, _, err := api.backend.GetTransaction(ctx, hash)
-	if err != nil {
-		return nil, err
-	}
-	// Only mined txes are supported
-	if tx == nil {
-		return nil, errTxNotFound
-	}
-	// It shouldn't happen in practice.
-	if blockNumber == 0 {
-		return nil, errors.New("genesis is not traceable")
-	}
-	return nil, nil
+func (api *API) Transaction(ctx context.Context, hash common.Hash, config *ethtracers.TraceConfig) ([]*backend.CallFrame, error) {
+	return api.backend.TraceTransaction(ctx, hash)
 }
 
 // APIs return the collection of RPC services the tracer package offers.
