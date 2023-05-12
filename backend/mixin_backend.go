@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
+	glog "log"
 	"math/big"
 	"os"
 	"time"
@@ -35,7 +35,7 @@ const (
 
 var (
 	gormLogger = logger.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		glog.New(os.Stdout, "\r\n", glog.LstdFlags), // io writer
 		logger.Config{
 			SlowThreshold:             10 * time.Millisecond, // Slow SQL threshold
 			LogLevel:                  logger.Info,           // Log level

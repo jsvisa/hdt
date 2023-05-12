@@ -8,11 +8,12 @@ import (
 
 	"github.com/ethereum/go-ethereum/cmd/utils"
 	"github.com/ethereum/go-ethereum/log"
+	"github.com/urfave/cli/v2"
+
 	"github.com/jsvisa/jsonrpc/backend"
 	"github.com/jsvisa/jsonrpc/node"
+	"github.com/jsvisa/jsonrpc/service/eth"
 	"github.com/jsvisa/jsonrpc/service/trace"
-
-	"github.com/urfave/cli/v2"
 )
 
 const (
@@ -112,7 +113,7 @@ func run(ctx *cli.Context) error {
 	cfg := loadBaseConfig(ctx)
 	stack, err := node.New(&cfg.Node)
 	if err != nil {
-		log.Crit("Failed to create the protocol stack: %v", err)
+		log.Crit("Failed to create the protocol stack", "err", err)
 	}
 
 	cctx := context.Background()
@@ -123,13 +124,14 @@ func run(ctx *cli.Context) error {
 		ctx.String(upstreamDBDSNFlag.Name),
 	)
 	if err != nil {
-		log.Crit("Failed to register the Ethereum service: %v", err)
+		log.Crit("Failed to register the Ethereum service", "err", err)
 	}
 	stack.RegisterAPIs(trace.APIs(backend))
+	stack.RegisterAPIs(eth.APIs(backend))
 	defer stack.Close()
 
 	if err := stack.Start(); err != nil {
-		log.Crit("Error starting protocol stack: %v", err)
+		log.Crit("Error starting protocol stack", "err", err)
 	}
 	stack.Wait()
 	return nil
