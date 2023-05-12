@@ -227,16 +227,23 @@ func (t *Trace) AsCallFrame() *CallFrame {
 	}
 
 	traceAddress := t.TraceAddress
-	traceAddress = strings.ReplaceAll(t.TraceAddress, "[", "")
-	traceAddress = strings.ReplaceAll(t.TraceAddress, "]", "")
-	traceAddress = strings.ReplaceAll(t.TraceAddress, " ", "")
-	traceAddresses := strings.Split(traceAddress, ",")
-	traceIntAddresses := make([]int, len(traceAddresses))
-	for i, s := range traceAddresses {
-		pos, _ := strconv.Atoi(s)
-		traceIntAddresses[i] = pos
+	traceAddress = strings.ReplaceAll(traceAddress, "[", "")
+	traceAddress = strings.ReplaceAll(traceAddress, "]", "")
+	traceAddress = strings.ReplaceAll(traceAddress, " ", "")
+	if traceAddress == "" {
+		frame.TraceAddress = []int{}
+	} else {
+		traceAddresses := strings.Split(traceAddress, ",")
+		traceIntAddresses := make([]int, len(traceAddresses))
+		for i, s := range traceAddresses {
+			pos, e := strconv.Atoi(s)
+			if e != nil {
+				log.Error("failed to parse traceAddress", "s", s, "e", e)
+			}
+			traceIntAddresses[i] = pos
+		}
+		frame.TraceAddress = traceIntAddresses
 	}
-	frame.TraceAddress = traceIntAddresses
 
 	var (
 		from      common.Address
