@@ -261,6 +261,7 @@ func (t *Trace) AsCallFrame() *CallFrame {
 	switch strings.ToUpper(t.TraceType) {
 	case vm.CREATE.String(), vm.CREATE2.String():
 		gas := uint64(t.Gas.BigInt().Int64())
+		gasUsed := t.GasUsed
 		frame.Action = CallAction{
 			From:  &from,
 			Gas:   &gas,
@@ -268,7 +269,7 @@ func (t *Trace) AsCallFrame() *CallFrame {
 			Init:  &input,
 		}
 		frame.Result = &CallResult{
-			GasUsed: &t.GasUsed,
+			GasUsed: &gasUsed,
 			Address: &to,
 			Code:    &output,
 		}
@@ -280,6 +281,7 @@ func (t *Trace) AsCallFrame() *CallFrame {
 		}
 	case vm.CALL.String(), vm.STATICCALL.String(), vm.CALLCODE.String(), vm.DELEGATECALL.String():
 		gas := uint64(t.Gas.BigInt().Int64())
+		gasUsed := t.GasUsed
 		frame.Action = CallAction{
 			From:     &from,
 			To:       &to,
@@ -289,7 +291,7 @@ func (t *Trace) AsCallFrame() *CallFrame {
 			CallType: t.CallType,
 		}
 		frame.Result = &CallResult{
-			GasUsed: &t.GasUsed,
+			GasUsed: &gasUsed,
 			Output:  &output,
 		}
 	default:
