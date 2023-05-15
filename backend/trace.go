@@ -205,7 +205,7 @@ type Trace struct {
 	RewardType      string           `json:"reward_type" gorm:"column:reward_type" example:"block"`
 	Gas             *decimal.Decimal `json:"gas" gorm:"column:gas" example:"477212"`
 	GasUsed         uint64           `json:"gas_used" gorm:"column:gas_used" example:"91903"`
-	SubTraces       int              `json:"sub_traces" gorm:"column:sub_traces" example:"0"`
+	SubTraces       int              `json:"subtraces" gorm:"column:subtraces" example:"0"`
 	TraceAddress    string           `json:"trace_address" gorm:"column:trace_address" example:"[]"`
 	Error           string           `json:"error" gorm:"column:error" example:"Reverted"`
 	// Status          int              `json:"status" gorm:"column:status" example:"0"`
