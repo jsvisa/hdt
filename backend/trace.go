@@ -273,7 +273,7 @@ func (t *Trace) AsCallFrame() *CallFrame {
 			Address: &to,
 			Code:    &output,
 		}
-	case vm.SELFDESTRUCT.String():
+	case vm.SELFDESTRUCT.String(), "SUICIDE":
 		frame.Action = CallAction{
 			SelfDestructed: &from,
 			Balance:        t.Value.BigInt(),
