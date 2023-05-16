@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/ethereum/go-ethereum v1.11.6
+	github.com/gorilla/mux v1.8.0
 	github.com/rs/cors v1.7.0
 	github.com/shopspring/decimal v1.3.1
 	github.com/urfave/cli/v2 v2.25.3
