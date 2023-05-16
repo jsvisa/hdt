@@ -15,7 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/lru"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/jsvisa/jsonrpc/ethclient"
+	"github.com/jsvisa/hdt/ethclient"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -37,11 +37,11 @@ var (
 	gormLogger = logger.New(
 		glog.New(os.Stdout, "\r\n", glog.LstdFlags), // io writer
 		logger.Config{
-			SlowThreshold:             10 * time.Millisecond, // Slow SQL threshold
-			LogLevel:                  logger.Info,           // Log level
-			IgnoreRecordNotFoundError: true,                  // Ignore ErrRecordNotFound error for logger
-			ParameterizedQueries:      false,                 // Don't include params in the SQL log
-			Colorful:                  true,                  // Disable color
+			SlowThreshold:             100 * time.Millisecond, // Slow SQL threshold
+			LogLevel:                  logger.Info,            // Log level
+			IgnoreRecordNotFoundError: true,                   // Ignore ErrRecordNotFound error for logger
+			ParameterizedQueries:      false,                  // Don't include params in the SQL log
+			Colorful:                  true,                   // Disable color
 		},
 	)
 )
