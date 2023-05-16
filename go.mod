@@ -1,4 +1,4 @@
-module github.com/jsvisa/jsonrpc
+module github.com/jsvisa/hdt
 
 go 1.20
 

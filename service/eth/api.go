@@ -21,7 +21,7 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/jsvisa/jsonrpc/backend"
+	"github.com/jsvisa/hdt/backend"
 )
 
 // API is the collection of tracing APIs exposed over the private debugging endpoint.

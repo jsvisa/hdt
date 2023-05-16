@@ -10,10 +10,10 @@ import (
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/urfave/cli/v2"
 
-	"github.com/jsvisa/jsonrpc/backend"
-	"github.com/jsvisa/jsonrpc/node"
-	"github.com/jsvisa/jsonrpc/service/eth"
-	"github.com/jsvisa/jsonrpc/service/trace"
+	"github.com/jsvisa/hdt/backend"
+	"github.com/jsvisa/hdt/node"
+	"github.com/jsvisa/hdt/service/eth"
+	"github.com/jsvisa/hdt/service/trace"
 )
 
 const (

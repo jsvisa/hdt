@@ -5,7 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/cmd/utils"
 	"github.com/ethereum/go-ethereum/eth/ethconfig"
-	"github.com/jsvisa/jsonrpc/node"
+	"github.com/jsvisa/hdt/node"
 )
 
 type gethConfig struct {
