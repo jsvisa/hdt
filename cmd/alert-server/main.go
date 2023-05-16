@@ -30,7 +30,6 @@ func init() {
 	app.Flags = []cli.Flag{
 		utils.HTTPListenAddrFlag,
 		utils.HTTPPortFlag,
-		utils.HTTPCORSDomainFlag,
 		upstreamDBDSNFlag,
 	}
 }
@@ -54,9 +53,9 @@ func run(ctx *cli.Context) error {
 	h := handlers.New(DB)
 	router := mux.NewRouter()
 
-	router.HandleFunc("/webhook", h.AddAlert).Methods(http.MethodPost)
+	router.HandleFunc("/webhook/alerts", h.AddAlert).Methods(http.MethodPost)
 
-	addr := fmt.Sprintf("%s:%s", ctx.String(utils.HTTPListenAddrFlag.Name), ctx.Int(utils.HTTPPortFlag.Name))
+	addr := fmt.Sprintf("%s:%d", ctx.String(utils.HTTPListenAddrFlag.Name), ctx.Int(utils.HTTPPortFlag.Name))
 	log.Info("API is running!", "listen", addr)
 	http.ListenAndServe(addr, router)
 	return nil

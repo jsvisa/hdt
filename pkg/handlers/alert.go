@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -20,12 +19,16 @@ func (h handler) AddAlert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var alert models.Alert
-	json.Unmarshal(body, &alert)
+	var rpcAlert models.RPCAlerts
+	err = json.Unmarshal(body, &rpcAlert)
+	if err != nil {
+		log.Error("failed to unmarshal", "err", err)
+	}
 
+	log.Info("recv alerts", "#alert", len(rpcAlert.Alerts))
 	// Append to the Books table
-	if result := h.DB.Create(&alert); result.Error != nil {
-		fmt.Println(result.Error)
+	if result := h.DB.CreateInBatches(&rpcAlert.Alerts, 10); result.Error != nil {
+		log.Error("failed to save alerts into db", "err", result.Error)
 	}
 
 	// Send a 201 created response
