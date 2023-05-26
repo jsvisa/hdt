@@ -28,14 +28,16 @@ var (
 		Value: "ethereum",
 	}
 	upstreamJSONRPCFlag = &cli.StringFlag{
-		Name:  "upstream.jsonrpc",
-		Usage: "upstream JSONRPC HTTP address with port",
-		Value: "http://127.0.0.1:8545",
+		Name:    "upstream.jsonrpc",
+		Usage:   "upstream JSONRPC HTTP address with port",
+		Value:   "http://127.0.0.1:8545",
+		EnvVars: []string{"UPSTREAM_JSONRPC"},
 	}
 	upstreamDBDSNFlag = &cli.StringFlag{
-		Name:  "upstream.dbdsn",
-		Usage: "upstream PostgreSQL connection DSN",
-		Value: "postgres://postgres:@127.0.0.1:5432/postgres?sslmode=disable",
+		Name:    "upstream.dbdsn",
+		Usage:   "upstream PostgreSQL connection DSN",
+		Value:   "postgres://postgres:@127.0.0.1:5432/postgres?sslmode=disable",
+		EnvVars: []string{"UPSTREAM_DBDSN"},
 	}
 	pprofFlag = &cli.BoolFlag{
 		Name:  "pprof",
