@@ -1,0 +1,114 @@
+x-logging: &default-logging
+  options:
+    max-size: '50m'
+    max-file: '10'
+
+services:
+  nats:
+    container_name: forta-nats
+    logging: *default-logging
+    image: nats:2.3.2
+    ports:
+      - 4222:4222
+      - 6222:6222
+      - 8222:8222
+    networks:
+      - forta-node
+
+  # jsonrpc:
+  #   container_name: forta-jsonrpc
+  #   logging: *default-logging
+  #   # build this image by doing `make containers` at the root first
+  #   image: forta-network/forta-node:latest
+  #   command: /forta-node json-rpc
+  #   networks:
+  #     - forta-node
+  #   # this file is mounted as an alternative form of the forta node config file
+  #   volumes:
+  #     - ${PWD}:/.forta
+  #     - ${PWD}/docker-compose.yml:/.forta/wrapped-config.yml
+  #   depends_on:
+  #     - nats
+
+  scanner:
+    container_name: forta-scanner
+    logging: *default-logging
+    # build this image by doing `make containers` at the root first
+    image: jsvisa/forta-node:latest
+    command: /forta-node scanner
+    networks:
+      - forta-node
+    # this file is mounted as an alternative form of the forta node config file
+    volumes:
+      - ${PWD}:/.forta
+      - ${PWD}/docker-compose.yml:/.forta/wrapped-config.yml
+    depends_on:
+      - nats
+    #   - jsonrpc
+    #   # - bot-1
+
+  alert-server:
+    container_name: alert-server
+    logging: *default-logging
+    image: jsvisa/alert-server:latest
+    command:
+      - /bin/alert-server
+      - --upstream.dbdsn=${UPSTREAM_DB_DSN}
+      - --http.addr=0.0.0.0
+      - --http.port=7545
+    networks:
+      - forta-node
+
+  # forta bot definitions
+
+  bot-1:
+    container_name: forta-bot-1
+    logging: *default-logging
+    image: jsvisa/forta-e2e:latest
+    networks:
+      - forta-node
+
+  bot-2:
+    container_name: forta-bot-2
+    logging: *default-logging
+    image: jsvisa/forta-e2e:latest
+    networks:
+      - forta-node
+
+networks:
+  forta-node: {}
+
+# specify the forta node config here!
+# this is known to the scanner as a "wrapped config".
+x-forta-config:
+  # chainId: 1
+  chainId: 137
+
+  scan:
+    jsonRpc:
+      url: 'https://polygon-mainnet.g.alchemy.com/v2/<foobar>'
+
+  # trace:
+  #   jsonRpc:
+  #     url: 'http://192.168.1.81:2111'
+
+  localMode:
+    enable: true
+    # webhook alerts are sent with a JWT which is signed using this key
+    privateKeyHex: jwt-token
+    webhookUrl: http://alert-server:7545/webhook/alerts
+    # logToStdout: true
+    # logFileName: alert.txt
+    # define if it is necessary to use a block range
+    # runtimeLimits:
+    #   startBlock: 40293984
+    #   stopBlock: 40293988
+    standalone:
+      enable: true
+      # make sure that the scanner knows the bot container names so it can attach
+      botContainers:
+        - forta-bot-1
+        # - forta-bot-2
+
+  publish:
+    alwaysPublish: true
