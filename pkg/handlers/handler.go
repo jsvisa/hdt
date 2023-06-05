@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/log"
@@ -17,13 +18,19 @@ type handler struct {
 	DB              *gorm.DB
 	slackWebhookURL string
 	slackChannel    string
+	slackSeverities map[string]bool
 }
 
-func New(db *gorm.DB, slackWebhookURL, slackChannel string) *handler {
+func New(db *gorm.DB, slackWebhookURL, slackChannel, slackSeverity string) *handler {
+	var severities map[string]bool
+	for _, s := range strings.Split(slackSeverity, ",") {
+		severities[strings.ToUpper(s)] = true
+	}
 	return &handler{
 		DB:              db,
 		slackWebhookURL: slackWebhookURL,
 		slackChannel:    slackChannel,
+		slackSeverities: severities,
 	}
 }
 
@@ -37,6 +44,9 @@ func (h *handler) postAlerts(alerts []*models.Alert) {
 	}
 	go func() {
 		for _, alert := range alerts {
+			if _, ok := h.slackSeverities[alert.Severity]; !ok {
+				continue
+			}
 			a := map[string]interface{}{
 				"name":        alert.Name,
 				"chain":       alert.Protocol,

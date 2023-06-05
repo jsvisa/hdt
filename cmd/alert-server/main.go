@@ -33,6 +33,11 @@ var (
 		Usage:   "Send a notify into this Slack channel",
 		EnvVars: []string{"SLACK_CHANNEL"},
 	}
+	slackSeverityFlag = &cli.StringFlag{
+		Name:  "notify.slack.severity",
+		Usage: "Slack severity threshold, a comma split list",
+		Value: "HIGH,CRITICAL",
+	}
 )
 
 func init() {
@@ -63,7 +68,7 @@ func run(ctx *cli.Context) error {
 	}
 
 	DB := db.Init(ctx.String(upstreamDBDSNFlag.Name))
-	h := handlers.New(DB, ctx.String(slackWebhookURLFlag.Name), ctx.String(slackChannelFlag.Name))
+	h := handlers.New(DB, ctx.String(slackWebhookURLFlag.Name), ctx.String(slackChannelFlag.Name), ctx.String(slackSeverityFlag.Name))
 	router := mux.NewRouter()
 
 	router.HandleFunc("/webhook/alerts", h.AddAlert).Methods(http.MethodPost)
