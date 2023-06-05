@@ -18,9 +18,20 @@ import (
 var app = cli.NewApp()
 var (
 	upstreamDBDSNFlag = &cli.StringFlag{
-		Name:  "upstream.dbdsn",
-		Usage: "upstream PostgreSQL connection DSN",
-		Value: "postgres://postgres:@127.0.0.1:5432/postgres?sslmode=disable",
+		Name:    "upstream.dbdsn",
+		Usage:   "upstream PostgreSQL connection DSN",
+		Value:   "postgres://postgres:@127.0.0.1:5432/postgres?sslmode=disable",
+		EnvVars: []string{"UPSTREAM_DBDSN"},
+	}
+	slackWebhookURLFlag = &cli.StringFlag{
+		Name:    "notify.slack.webhook",
+		Usage:   "Send an notify into Slack via this webhook",
+		EnvVars: []string{"SLACK_WEBHOOK"},
+	}
+	slackChannelFlag = &cli.StringFlag{
+		Name:    "notify.slack.channel",
+		Usage:   "Send a notify into this Slack channel",
+		EnvVars: []string{"SLACK_CHANNEL"},
 	}
 )
 
@@ -31,6 +42,8 @@ func init() {
 		utils.HTTPListenAddrFlag,
 		utils.HTTPPortFlag,
 		upstreamDBDSNFlag,
+		slackWebhookURLFlag,
+		slackChannelFlag,
 	}
 }
 
@@ -50,7 +63,7 @@ func run(ctx *cli.Context) error {
 	}
 
 	DB := db.Init(ctx.String(upstreamDBDSNFlag.Name))
-	h := handlers.New(DB)
+	h := handlers.New(DB, ctx.String(slackWebhookURLFlag.Name), ctx.String(slackChannelFlag.Name))
 	router := mux.NewRouter()
 
 	router.HandleFunc("/webhook/alerts", h.AddAlert).Methods(http.MethodPost)

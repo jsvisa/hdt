@@ -26,13 +26,17 @@ func (h handler) AddAlert(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Info("recv alerts", "#alert", len(rpcAlert.Alerts))
-	// Append to the Books table
-	if result := h.DB.CreateInBatches(&rpcAlert.Alerts, 10); result.Error != nil {
-		log.Error("failed to save alerts into db", "err", result.Error)
+	if len(rpcAlert.Alerts) > 0 {
+		h.postAlerts(rpcAlert.Alerts)
+
+		// Append to the alerts table
+		if result := h.DB.CreateInBatches(&rpcAlert.Alerts, 10); result.Error != nil {
+			log.Error("failed to save alerts into db", "err", result.Error)
+		}
 	}
 
-	// Send a 201 created response
+	// Send a 200 OK
 	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode("Created")
 }

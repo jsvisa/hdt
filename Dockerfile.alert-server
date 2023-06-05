@@ -1,0 +1,19 @@
+FROM golang:1.20-alpine as builder
+
+RUN apk add --no-cache make
+
+# Get dependencies - will also be cached if we won't change go.mod/go.sum
+COPY go.mod /app/
+COPY go.sum /app/
+RUN cd /app && go mod download
+
+ADD . /app
+RUN cd /app && make alert-server
+
+FROM alpine:latest
+
+RUN apk add --no-cache ca-certificates
+COPY --from=builder /app/build/bin/alert-server /usr/local/bin/
+
+EXPOSE 8545
+ENTRYPOINT ["alert-server"]
