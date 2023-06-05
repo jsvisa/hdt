@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -36,14 +37,30 @@ func (h *handler) postAlerts(alerts []*models.Alert) {
 	}
 	go func() {
 		for _, alert := range alerts {
-			text, err := json.MarshalIndent(alert, "  ", "  ")
+			a := map[string]interface{}{
+				"name":        alert.Name,
+				"chain":       alert.Protocol,
+				"findingType": alert.FindingType,
+				"severity":    alert.Severity,
+				"description": alert.Description,
+				"metadata":    alert.Metadata,
+			}
+			if source := alert.Source; source != nil {
+				a["bot-id"] = source.Bot.ID
+				a["txhash"] = source.TransactionHash
+				if block := source.Block; block != nil {
+					a["blknum"] = source.Block.Number
+					a["timestamp"] = source.Block.Timestamp
+				}
+			}
+			text, err := json.MarshalIndent(a, "  ", "  ")
 			if err != nil {
 				log.Error("failed to marshal Alert", "err", err)
 				continue
 			}
 			attachment := slack.Attachment{
 				Color:      "good",
-				Fallback:   "Receive Forta Alerts",
+				Fallback:   fmt.Sprintf("Receive Forta Alert: %s", alert.AlertID),
 				Text:       string(text),
 				Footer:     "forta alert",
 				FooterIcon: ":microbe:",
