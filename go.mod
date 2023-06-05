@@ -8,6 +8,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/rs/cors v1.7.0
 	github.com/shopspring/decimal v1.3.1
+	github.com/slack-go/slack v0.12.2
 	github.com/urfave/cli/v2 v2.25.3
 	gorm.io/datatypes v1.2.0
 	gorm.io/driver/postgres v1.5.0
