@@ -27,6 +27,8 @@ func (h handler) AddAlert(w http.ResponseWriter, r *http.Request) {
 
 	log.Info("recv alerts", "#alert", len(rpcAlert.Alerts))
 	if len(rpcAlert.Alerts) > 0 {
+		h.postAlerts(rpcAlert.Alerts)
+
 		// Append to the alerts table
 		if result := h.DB.CreateInBatches(&rpcAlert.Alerts, 10); result.Error != nil {
 			log.Error("failed to save alerts into db", "err", result.Error)
