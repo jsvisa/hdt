@@ -49,6 +49,7 @@ func init() {
 		upstreamDBDSNFlag,
 		slackWebhookURLFlag,
 		slackChannelFlag,
+		slackSeverityFlag,
 	}
 }
 

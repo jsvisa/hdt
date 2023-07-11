@@ -22,7 +22,7 @@ type handler struct {
 }
 
 func New(db *gorm.DB, slackWebhookURL, slackChannel, slackSeverity string) *handler {
-	var severities map[string]bool
+	severities := make(map[string]bool)
 	for _, s := range strings.Split(slackSeverity, ",") {
 		severities[strings.ToUpper(s)] = true
 	}
