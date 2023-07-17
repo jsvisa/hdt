@@ -48,20 +48,15 @@ func (h *handler) postAlerts(alerts []*models.Alert) {
 				continue
 			}
 			a := map[string]interface{}{
-				"name":        alert.Name,
-				"chain":       alert.Protocol,
-				"findingType": alert.FindingType,
-				"severity":    alert.Severity,
-				"description": alert.Description,
-				"metadata":    alert.Metadata,
-			}
-			if source := alert.Source; source != nil {
-				a["bot-id"] = source.Bot.ID
-				a["txhash"] = source.TransactionHash
-				if block := source.Block; block != nil {
-					a["blknum"] = source.Block.Number
-					a["timestamp"] = source.Block.Timestamp
-				}
+				"name":            alert.Name,
+				"chain":           alert.Chain,
+				"block_timestamp": alert.BlockTimestamp,
+				"blknum":          alert.BlockNum,
+				"txhash":          alert.TxHash,
+				"findingType":     alert.FindingType,
+				"severity":        alert.Severity,
+				"description":     alert.Description,
+				"metadata":        alert.Metadata,
 			}
 			text, err := json.MarshalIndent(a, "  ", "  ")
 			if err != nil {

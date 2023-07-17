@@ -4,9 +4,29 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/jsvisa/hdt/pkg/models"
+	"gorm.io/datatypes"
+)
+
+var (
+	// Ref https://github.com/DefiLlama/chainlist/blob/main/constants/chainIds.json
+	CHAINIDS = map[uint64]string{
+		1:     "ethererum",
+		10:    "optimistic",
+		25:    "cronos",
+		56:    "bsc",
+		66:    "okex",
+		128:   "heco",
+		137:   "bor",
+		250:   "fantom",
+		42161: "arbitrum",
+		42220: "celo",
+		42170: "nova",
+		43114: "avalanche",
+	}
 )
 
 func (h handler) AddAlert(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +47,32 @@ func (h handler) AddAlert(w http.ResponseWriter, r *http.Request) {
 
 	log.Info("recv alerts", "#alert", len(rpcAlert.Alerts))
 	if len(rpcAlert.Alerts) > 0 {
-		h.postAlerts(rpcAlert.Alerts)
+		alerts := make([]*models.Alert, len(rpcAlert.Alerts))
+		for i, alert := range rpcAlert.Alerts {
+			alerts[i] = &models.Alert{
+				AlertID:     alert.AlertID,
+				Name:        alert.Name,
+				Description: alert.Description,
+				CreatedAt:   alert.CreatedAt,
+				FindingType: alert.FindingType,
+				Severity:    alert.Severity,
+				Metadata:    datatypes.JSON(alert.Metadata),
+			}
+			if source := alert.Source; source != nil {
+				alerts[i].TxHash = source.TransactionHash
+				if block := source.Block; block != nil {
+					chainID := block.ChainID
+					if chain, ok := CHAINIDS[chainID]; ok {
+						alerts[i].Chain = chain
+					}
+					alerts[i].BlockNum = block.Number
+					if blockTime, err := time.Parse(time.RFC3339, block.Timestamp); err == nil {
+						alerts[i].BlockTimestamp = blockTime
+					}
+				}
+			}
+		}
+		h.postAlerts(alerts)
 
 		// Append to the alerts table
 		if result := h.DB.CreateInBatches(&rpcAlert.Alerts, 10); result.Error != nil {

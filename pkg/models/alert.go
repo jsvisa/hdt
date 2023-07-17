@@ -1,9 +1,10 @@
 package models
 
 import (
+	"time"
+
 	"github.com/lib/pq"
 	"gorm.io/datatypes"
-	"gorm.io/gorm"
 )
 
 // copy from "github.com/forta-network/forta-core-go/clients/webhook/client/models"
@@ -64,9 +65,7 @@ type AlertSource struct {
 	TransactionHash string `json:"transactionHash,omitempty"`
 }
 
-type Alert struct {
-	gorm.Model
-
+type RPCAlert struct {
 	// Addresses involved in the source of this alert
 	// Example: ["0x98883145049dec03c00cb7708cbc938058802520","0x1fFa3471A45C22B1284fE5a251eD74F40580a1E3"]
 	Addresses pq.StringArray `json:"addresses" gorm:"type:text[]"`
@@ -124,5 +123,53 @@ type Alert struct {
 }
 
 type RPCAlerts struct {
-	Alerts []*Alert `json:"alerts"`
+	Alerts []*RPCAlert `json:"alerts"`
+}
+
+type Alert struct {
+	ID             uint      `gorm:"primarykey"`
+	Chain          string    `json:"chain,omitempty"`
+	BlockTimestamp time.Time `json:"blockTimestamp,omitempty"`
+	BlockNum       uint64    `json:"blockNum,omitempty"`
+	TxHash         string    `json:"txhash,omitempty"`
+
+	// Addresses involved in the source of this alert
+	// Example: ["0x98883145049dec03c00cb7708cbc938058802520","0x1fFa3471A45C22B1284fE5a251eD74F40580a1E3"]
+	Addresses pq.StringArray `json:"addresses" gorm:"type:text[]"`
+
+	// AddressBloomFilter contains **all** addresses in the alert
+	// Example: "addressBloomFilter": {"k": 11,"m": 44,"bitset": "AAAAAAAAACwAAAAAAAAACwAAAAAAAAAsAAALo5gpbbc=", item_count: 1}
+	// AddressBloomFilter interface{} `json:"addressBloomFilter,omitempty"`
+
+	// alert Id
+	// Example: OZ-GNOSIS-EVENTS
+	AlertID string `json:"alertId,omitempty"`
+
+	// Timestamp (RFC3339Nano)
+	// Example: 2022-03-01T12:24:33.379756298Z
+	CreatedAt string `json:"createdAt,omitempty"`
+
+	// name
+	// Example: Transfer Event
+	Name string `json:"name,omitempty"`
+
+	// description
+	// Example: Detected Transfer event
+	Description string `json:"description,omitempty"`
+
+	// finding type
+	// Enum: [UNKNOWN_TYPE EXPLOIT SUSPICIOUS DEGRADED INFORMATION SCAM]
+	FindingType string `json:"findingType,omitempty"`
+
+	// An associative array of extra links values
+	// Example: {"blockUrl":"https://etherscan.io/block/18646150","explorerUrl":"https://explorer.forta.network/alert/0xd795c365931762afeccf4a440ecee2f7e89820c59136aa46310a8eec54ba96d8"}
+	// Links interface{} `json:"links,omitempty"`
+
+	// An associative array of string values
+	// Example: {"contractAddress":"0x98883145049dec03c00cb7708cbc938058802520","operator":"0x1fFa3471A45C22B1284fE5a251eD74F40580a1E3"}
+	Metadata datatypes.JSON `json:"metadata,omitempty" gorm:"type:json"`
+
+	// severity
+	// Enum: [UNKNOWN INFO LOW MEDIUM HIGH CRITICAL]
+	Severity string `json:"severity,omitempty"`
 }
