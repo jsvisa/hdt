@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/jsvisa/hdt/pkg/models"
 	"gorm.io/datatypes"
@@ -66,8 +67,11 @@ func (h handler) AddAlert(w http.ResponseWriter, r *http.Request) {
 						alerts[i].Chain = chain
 					}
 					alerts[i].BlockNum = block.Number
-					if blockTime, err := time.Parse(time.RFC3339, block.Timestamp); err == nil {
-						alerts[i].BlockTimestamp = blockTime
+					if blockTime, err := hexutil.DecodeUint64(block.Timestamp); err == nil {
+						alerts[i].BlockTimestamp = time.Unix(int64(blockTime), 0)
+					} else {
+						log.Error("failed to decode block timestamp", "block.Timestamp", block.Timestamp, "err", err)
+						alerts[i].BlockTimestamp = time.Now()
 					}
 				}
 			}
@@ -75,7 +79,7 @@ func (h handler) AddAlert(w http.ResponseWriter, r *http.Request) {
 		h.postAlerts(alerts)
 
 		// Append to the alerts table
-		if result := h.DB.CreateInBatches(&rpcAlert.Alerts, 10); result.Error != nil {
+		if result := h.DB.CreateInBatches(&alerts, 10); result.Error != nil {
 			log.Error("failed to save alerts into db", "err", result.Error)
 		}
 	}
